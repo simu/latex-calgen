@@ -1,18 +1,20 @@
 #!/usr/bin/perl
-# make-calendar: ncal-Ausgabe für Latex aufbereiten
+# make-calendar.pl: glue ncal output into LaTeX document.
 
 my $year = shift;
+my $week_start=shift;
+# cleanup week start argument
+$week_start="-M" if not $week_start =~ /-S|-M/;
+my $week_starts_on_sunday=$week_start eq '-S';
 
-open HEAD,"< head.tex" or die "Cannot find 'head.tex': $!";
-while(<HEAD>) { print; }
+open HEAD,"< head.tex.in" or die "Cannot find 'head.tex.in': $!";
+while(<HEAD>) { s/%year%/$year/; print; }
 close HEAD;
 
 foreach my $month (1 .. 12) {
-	my ($head, @cal) = `LC_ALL=de_CH.utf8 cal $month $year`;
+	my ($head, @cal) = `ncal $week_start -b $month $year`;
 	my ($lines, $height) = (0,0);
 	($head) = $head =~ /(\S+)/;
-#	$head =~ s/(\S+)/\U$1/;
-#	if($head eq "MäRZ") { $head = "MÄRZ"; }
 	printf qq|\\begin{calmonth}{%s}{%d}\n|, $head, $year;
 	print "\\hline\n";
 	foreach (@cal) {
@@ -29,15 +31,17 @@ foreach my $month (1 .. 12) {
 	elsif($lines==4) { $height = 3; }
 	print STDERR $height;
 	print STDERR "\n";
+	# first line is weekday names
+	$weekdays=1;
 	foreach (@cal) {
 		chomp;
 		next if /^\s*$/;
 		@days = unpack '(A3)7', $_;
-		$so = pop @days;
-		$so = "\\textcolor\{socol\}\{$so}";
-		push @days, $so;
-		if($days[0] eq 'Mo') {
+		$so=$days[$week_starts_on_sunday?0:6];
+		$days[$week_starts_on_sunday?0:6]="\\textcolor\{socol\}\{$so}";
+		if($weekdays) {
 			print join('&', @days), "\\\\\n" if @days;
+			$weekdays=0;
 		}
 		else {
 			print join('&', @days), "\\\\[${height}cm]\n" if @days;

@@ -11,11 +11,15 @@
 \usepackage{microtype}
 \renewcommand*\familydefault{\sfdefault}
 
+% setup for A4
 \areaset{27.6cm}{20cm}
 \pagestyle{empty}
 
+% highlight color for the sunday column
 \definecolor{socol}{rgb}{1.0,0,0}
 
+% don't change the following two lines if you want to use
+% one of the predefined headings.
 \newsavebox\TBox
 \sbox\TBox{%year%}
 
@@ -25,7 +29,7 @@
 #2}\hfill\resizebox{!}{\wd\TBox}{#1}\\[5mm]}}
 
 
-% alternate month heading design, uncomment this
+%% alternate month heading design, uncomment this
 %\newcommand{\monthhead}[2]{%
 %\begin{flushright}\rotatebox{90}{#2}\hspace{3mm}%
 %\resizebox{!}{\wd\TBox}{#1}\\[5mm]%
