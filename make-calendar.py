@@ -5,6 +5,8 @@ import tempfile
 
 HEAD = "head.tex.in"
 
+debug = False
+
 class LatexCalendar(calendar.Calendar):
 
 
@@ -16,7 +18,7 @@ class LatexCalendar(calendar.Calendar):
 			self.bday_file = args[2]
 		else:
 			self.bday_file = None
-		self.texfile = tempfile.NamedTemporaryFile(delete=False)
+		self.texfile = tempfile.NamedTemporaryFile(delete=debug)
 		self.heights = [0] * 7;
 		self.heights[4] = 3
 		self.heights[5] = 2.5
@@ -64,7 +66,7 @@ class LatexCalendar(calendar.Calendar):
 	def pdflatex(self):
 		import subprocess
 		ret = subprocess.call(["pdflatex", self.texfile.name]);
-		if ret == 0:
+		if not debug and ret == 0:
 			import os, os.path
 			fname = os.path.basename(self.texfile.name)
 			os.remove(fname + ".aux")
