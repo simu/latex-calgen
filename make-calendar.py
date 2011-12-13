@@ -12,12 +12,23 @@ class LatexCalendar(calendar.Calendar):
 
 	def __init__(self, *args):
 		super(calendar.Calendar, self)
+
+		# set year
 		self.year = int(args[0])
-		self.setfirstweekday(int(args[1]))
-		if len(args) > 2:
-			self.bday_file = args[2]
+
+		# setup csv data
+		if len(args) > 1:
+			self.bday_file = args[1]
 		else:
 			self.bday_file = None
+
+		# configure calendar
+		if len(args) > 2:
+			self.setfirstweekday(int(args[2]))
+		else:
+			self.setfirstweekday(0)
+
+		# helper stuff
 		self.texfile = tempfile.NamedTemporaryFile(delete=debug)
 		self.heights = [0] * 7;
 		self.heights[4] = 3
@@ -74,17 +85,23 @@ class LatexCalendar(calendar.Calendar):
 			os.rename(fname + ".pdf", "cal%d.pdf" % self.year)
 
 
-def usage():
-	pass
+def usage(*args):
+	print "usage: %s <year> [csv-data [first-day-of-week]]" % args[0][0]
+	print ""
+	print "   where first-day-of-week is one of 0=Monday, ..., 6=Sunday"
+	print ""
 
-# arguments: year, weekstart, birthday file
+# arguments: year, csv-data, weekstart
 if __name__ == "__main__":
+	# set locale: used for generating month and day names
 	import locale
 	locale.setlocale(locale.LC_ALL, '')
+	locale.setlocale(locale.LC_TIME, '')
 
 	import sys
-	if len(sys.argv) < 3:
-		usage()
+	if len(sys.argv) < 2:
+		usage(sys.argv)
+		sys.exit(1)
 
 	pc = LatexCalendar(*sys.argv[1:])
 	pc.generate_file()
