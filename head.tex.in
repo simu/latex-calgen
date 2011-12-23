@@ -17,6 +17,7 @@
 
 % highlight color for the sunday column
 \definecolor{socol}{rgb}{1.0,0,0}
+\definecolor{special}{rgb}{0,1.0,0}
 
 % don't change the following two lines if you want to use
 % one of the predefined headings.

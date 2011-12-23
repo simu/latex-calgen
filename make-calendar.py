@@ -9,101 +9,135 @@ debug = False
 
 class LatexCalendar(calendar.Calendar):
 
+    def __init__(self, *args):
+        super(calendar.Calendar, self)
 
-	def __init__(self, *args):
-		super(calendar.Calendar, self)
+        # set year
+        self.year = int(args[0])
 
-		# set year
-		self.year = int(args[0])
+        # setup csv data
+        if len(args) > 1:
+            self.parse_file(args[1])
+        else:
+            self.data = None
 
-		# setup csv data
-		if len(args) > 1:
-			self.bday_file = args[1]
-		else:
-			self.bday_file = None
+        # configure calendar
+        if len(args) > 2:
+            self.setfirstweekday(int(args[2]))
+        else:
+            self.setfirstweekday(0)
 
-		# configure calendar
-		if len(args) > 2:
-			self.setfirstweekday(int(args[2]))
-		else:
-			self.setfirstweekday(0)
+        # helper stuff
+        self.texfile = tempfile.NamedTemporaryFile(delete=debug)
+        self.heights = [0] * 7;
+        self.heights[4] = 3
+        self.heights[5] = 2.5
+        self.heights[6] = 1.9
+        self.sun_index = [ x for x in self.iterweekdays() ].index(6)
 
-		# helper stuff
-		self.texfile = tempfile.NamedTemporaryFile(delete=debug)
-		self.heights = [0] * 7;
-		self.heights[4] = 3
-		self.heights[5] = 2.5
-		self.heights[6] = 1.9
-		self.sun_index = [ x for x in self.iterweekdays() ].index(6)
+    def parse_file(self, filename):
 
-	@property
-	def has_bdays(self):
-		return self.bday_file is not None
+        self.data = dict()
+        for i in xrange(1, 13):
+            self.data[i]=dict()
 
-	def generate_file(self):
-		# add header to texfile
-		with open(HEAD) as header:
-			for line in header:
-				self.texfile.write(line.replace("%year%", str(self.year)))
+        with open(filename) as datafile:
+            first = True
+            for line in datafile:
+                if first:
+                    first = False
+                    continue
 
-		# add months 1 - 12
-		for month in xrange(1,13):
-			# table header
-			self.texfile.write("\\begin{calmonth}{%s}{%d}\n\hline\n" % (calendar.month_name[month], self.year))
-			# table header: day names
-			days = [d[0:2] for d in calendar.day_abbr]
-			days[self.sun_index] = "\\textcolor{socol}{%s}" % days[self.sun_index]
-			self.texfile.write("&".join(days))
-			self.texfile.write("\\\\\n\hline\n")
+                name,date,special=line.strip().split(',')
+                m,d = map(int, date.split('/'))
 
-			# generate day entries
-			mdays = self.monthdayscalendar(self.year, month)
-			lines = []
-			for line in mdays:
-				if line[self.sun_index] != 0:
-					line[self.sun_index] = "\\textcolor{socol}{%s}" % line[self.sun_index]
-				lines.append("&".join([str(y) if y != 0 else "" for y in line]))
-			height = self.heights[len(lines)]
+                self.data[m][d] = (name, special)
 
-			# output
-			self.texfile.write(("\\\\[%.1fcm]\n\hline\n"%height).join(lines))
-			self.texfile.write("\\\\[%.1fcm]\n\hline\n"%height)
-			self.texfile.write("\\end{calmonth}\n")
+    @property
+    def has_bdays(self):
+        return self.data is not None
 
-		self.texfile.write("\end{document}\n\n")
-		self.texfile.flush()
+    def generate_file(self):
+        # add header to texfile
+        with open(HEAD) as header:
+            for line in header:
+                self.texfile.write(line.replace("%year%", str(self.year)))
+
+        # add months 1 - 12
+        for month in xrange(1,13):
+            # get additional data for this month
+            monthdata = self.data[month]
+
+            # table header
+            self.texfile.write("\\begin{calmonth}{%s}{%d}\n\hline\n" % (calendar.month_name[month], self.year))
+            # table header: day names
+            days = [d[0:2] for d in calendar.day_abbr]
+            days[self.sun_index] = "\\textcolor{socol}{%s}" % days[self.sun_index]
+            self.texfile.write("&".join(days))
+            self.texfile.write("\\\\\n\hline\n")
+
+            # generate day entries
+            mdays = self.monthdayscalendar(self.year, month)
+            lines = []
+            for line in mdays:
+                # insert special data
+                for (day, data) in monthdata.items():
+                    try:
+                        i = line.index(day)
+                    except ValueError:
+                        continue
+                    if i != -1:
+                        if data[1] != "":
+                            line[i] = "%s\\newline{\\tiny\\textcolor{special}{%s}}" % (line[i], data[0])
+                        else:
+                            line[i] = "%s\\newline{\\tiny %s}" % (line[i], data[0])
+
+                # color sundays red
+                if line[self.sun_index] != 0:
+                    line[self.sun_index] = "\\textcolor{socol}{%s}" % line[self.sun_index]
+
+                lines.append("&".join([str(y) if y != 0 else "" for y in line]))
+            height = self.heights[len(lines)]
+
+            # output
+            self.texfile.write(("\\\\[%.1fcm]\n\hline\n"%height).join(lines))
+            self.texfile.write("\\\\[%.1fcm]\n\hline\n"%height)
+            self.texfile.write("\\end{calmonth}\n")
+
+        self.texfile.write("\end{document}\n\n")
+        self.texfile.flush()
 
 
-	def pdflatex(self):
-		import subprocess
-		ret = subprocess.call(["pdflatex", self.texfile.name]);
-		if not debug and ret == 0:
-			import os, os.path
-			fname = os.path.basename(self.texfile.name)
-			os.remove(fname + ".aux")
-			os.remove(fname + ".log")
-			os.rename(fname + ".pdf", "cal%d.pdf" % self.year)
+    def pdflatex(self):
+        import subprocess
+        ret = subprocess.call(["pdflatex", self.texfile.name]);
+        if not debug and ret == 0:
+            import os, os.path
+            fname = os.path.basename(self.texfile.name)
+            os.remove(fname + ".aux")
+            os.remove(fname + ".log")
+            os.rename(fname + ".pdf", "cal%d.pdf" % self.year)
 
 
 def usage(*args):
-	print "usage: %s <year> [csv-data [first-day-of-week]]" % args[0][0]
-	print ""
-	print "   where first-day-of-week is one of 0=Monday, ..., 6=Sunday"
-	print ""
+    print "usage: %s <year> [csv-data [first-day-of-week]]" % args[0][0]
+    print ""
+    print "   where first-day-of-week is one of 0=Monday, ..., 6=Sunday"
+    print ""
 
 # arguments: year, csv-data, weekstart
 if __name__ == "__main__":
-	# set locale: used for generating month and day names
-	import locale
-	locale.setlocale(locale.LC_ALL, '')
-	locale.setlocale(locale.LC_TIME, '')
+    # set locale: used for generating month and day names
+    import locale
+    locale.setlocale(locale.LC_ALL, '')
+    locale.setlocale(locale.LC_TIME, '')
 
-	import sys
-	if len(sys.argv) < 2:
-		usage(sys.argv)
-		sys.exit(1)
+    import sys
+    if len(sys.argv) < 2:
+        usage(sys.argv)
+        sys.exit(1)
 
-	pc = LatexCalendar(*sys.argv[1:])
-	pc.generate_file()
-	pc.pdflatex()
+    pc = LatexCalendar(*sys.argv[1:])
+    pc.generate_file()
+    pc.pdflatex()
 
