@@ -80,6 +80,8 @@ class LatexCalendar(calendar.Calendar):
             mdays = self.monthdayscalendar(self.year, month)
             lines = []
             for line in mdays:
+                sunday_done = False
+                last_day_in_week = False
                 # insert special data
                 for (day, data) in monthdata.items():
                     try:
@@ -87,21 +89,41 @@ class LatexCalendar(calendar.Calendar):
                     except ValueError:
                         continue
                     if i != -1:
-                        if data[1] != "":
-                            line[i] = "%s\\newline{\\tiny\\textcolor{special}{%s}}" % (line[i], data[0])
+                        if i == self.sun_index:
+                            # color sundays red
+                            if data[1] != "":
+                                line[i] = "\\textcolor{socol}{%s}\\newline{\\tiny\\textcolor{special}{%s}}" % (line[i], data[0])
+                            else:
+                                line[i] = "\\textcolor{socol}{%s}\\newline{\\tiny %s}" % (line[i], data[0])
+                            sunday_done=True
                         else:
-                            line[i] = "%s\\newline{\\tiny %s}" % (line[i], data[0])
+                            if data[1] != "":
+                                line[i] = "%s\\newline{\\tiny\\textcolor{special}{%s}}" % (line[i], data[0])
+                            else:
+                                line[i] = "%s\\newline{\\tiny %s}" % (line[i], data[0])
+                    if i == 6:
+                        last_day_in_week = True
 
-                # color sundays red
-                if line[self.sun_index] != 0:
-                    line[self.sun_index] = "\\textcolor{socol}{%s}" % line[self.sun_index]
+                if not sunday_done:
+                    # color sundays red
+                    if line[self.sun_index] != 0:
+                        line[self.sun_index] = "\\textcolor{socol}{%s}" % line[self.sun_index]
 
-                lines.append("&".join([str(y) if y != 0 else "" for y in line]))
+
+                # output is more complicated when last day in week has additional data
+                lines.append(("&".join([str(y) if y != 0 else "" for y in line]), last_day_in_week))
+
             height = self.heights[len(lines)]
 
             # output
-            self.texfile.write(("\\\\[%.1fcm]\n\hline\n"%height).join(lines))
-            self.texfile.write("\\\\[%.1fcm]\n\hline\n"%height)
+            for line,last_day_in_week in lines:
+                if last_day_in_week:
+                    h = height - 0.8
+                else:
+                    h = height
+                self.texfile.write("%s\\\\[%.1fcm]\n\hline\n"%(line,h))
+            #self.texfile.write(("\\\\[%.1fcm]\n\hline\n"%height).join(lines))
+            #self.texfile.write("\\\\[%.1fcm]\n\hline\n"%height)
             self.texfile.write("\\end{calmonth}\n")
 
         self.texfile.write("\end{document}\n\n")
