@@ -28,7 +28,7 @@ class LatexCalendar(calendar.Calendar):
             self.setfirstweekday(0)
 
         # helper stuff
-        self.texfile = tempfile.NamedTemporaryFile(delete=debug)
+        self.texfile = tempfile.NamedTemporaryFile(delete=not debug)
         self.heights = [0] * 7;
         self.heights[4] = 3
         self.heights[5] = 2.5
