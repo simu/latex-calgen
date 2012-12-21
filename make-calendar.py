@@ -49,7 +49,7 @@ class LatexCalendar(calendar.Calendar):
                     continue
 
                 name,date,special=line.strip().split(',')
-                m,d = map(int, date.split('/'))
+                m,d,_ = map(int, date.split('/'))
 
                 self.data[m][d] = (name, special)
 
@@ -66,7 +66,10 @@ class LatexCalendar(calendar.Calendar):
         # add months 1 - 12
         for month in xrange(1,13):
             # get additional data for this month
-            monthdata = self.data[month]
+            if self.has_bdays:
+                monthdata = self.data[month]
+            else:
+                monthdata = dict()
 
             # table header
             self.texfile.write("\\begin{calmonth}{%s}{%d}\n\hline\n" % (calendar.month_name[month], self.year))
