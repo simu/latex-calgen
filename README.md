@@ -16,8 +16,15 @@ The complete invocation syntax is
 	./make-calendar.py <year> [csv-data [first-day-of-week]]
 
 The second parameter `csv-data` is intended to be used for e.g. birthday data
-and the csv should have two columns containing date and text for each data point.
-The date should be the first column.
+and the csv should have three columns containing: 
+- a description
+- the date in `M/D/YYYY` format  
+- a description for each data point
+
+
+The first line of the CSV file is ignored
+
+
 The third parameter `first-day-of-week` is used to select on which weekday
 (0=Monday through to 6=Sunday) the week starts. If the parameter is omitted the
 week starts on Monday.
