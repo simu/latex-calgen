@@ -9,6 +9,7 @@
 \usepackage[table]{xcolor}
 \usepackage{graphicx}
 \usepackage{microtype}
+\usepackage{setspace}
 \renewcommand*\familydefault{\sfdefault}
 
 % setup for A4
@@ -36,9 +37,10 @@
 %\resizebox{!}{\wd\TBox}{#1}\\[5mm]%
 %\end{flushright}}
 
+\newcolumntype{D}[1]{>{\raggedright\arraybackslash}p{3.5cm}|}
 \newenvironment{calmonth}[2]{%
 \monthhead{#1}{#2}%
-\begin{tabular}{|*{7}{p{3.5cm}|}}}
+\begin{tabular}{|*{7}{D|}}}
 {\end{tabular}\newpage}
 
 \begin{document}

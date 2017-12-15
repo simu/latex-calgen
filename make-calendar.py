@@ -48,10 +48,13 @@ class LatexCalendar(calendar.Calendar):
                     first = False
                     continue
 
-                name,date,special=line.strip().split(',')
-                m,d,_ = map(int, date.split('/'))
+                date,name,special=line.strip().split(',')
+                d,m,_ = map(int, date.split('/'))
 
-                self.data[m][d] = (name, special)
+                if (m in self.data.keys() and d in self.data[m].keys()):
+                    self.data[m][d].append((name, special))
+                else:
+                    self.data[m][d] = [(name, special)]
 
     @property
     def has_bdays(self):
@@ -82,28 +85,42 @@ class LatexCalendar(calendar.Calendar):
             # generate day entries
             mdays = self.monthdayscalendar(self.year, month)
             lines = []
-            for line in mdays:
+            for l in mdays:
                 sunday_done = False
                 last_day_in_week = False
                 # insert special data
-                for (day, data) in monthdata.items():
+                line = list(l)
+                for (day, datas) in monthdata.items():
                     try:
-                        i = line.index(day)
+                        i = l.index(day)
                     except ValueError:
                         continue
                     if i != -1:
+                        # add day number
                         if i == self.sun_index:
                             # color sundays red
-                            if data[1] != "":
-                                line[i] = "\\textcolor{socol}{%s}\\newline{\\tiny\\textcolor{special}{%s}}" % (line[i], data[0])
-                            else:
-                                line[i] = "\\textcolor{socol}{%s}\\newline{\\tiny %s}" % (line[i], data[0])
+                            line[i] = "\\textcolor{socol}{%s}" % l[i]
                             sunday_done=True
                         else:
+                            line[i] = str(l[i])
+
+                        # TODO: refactor + move latex magic into macros
+                        # process extra data
+                        if len(datas) == 1:
+                            data = datas[0]
                             if data[1] != "":
-                                line[i] = "%s\\newline{\\tiny\\textcolor{special}{%s}}" % (line[i], data[0])
+                                line[i] = line[i] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny\\textcolor{special}{%s}}" % (data[0])
                             else:
-                                line[i] = "%s\\newline{\\tiny %s}" % (line[i], data[0])
+                                line[i] = line[i] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny %s}" % (data[0])
+                        elif len(datas) > 1:
+                            line[i] = line[i] + "\\vspace*{.5\\baselineskip} \\newline \\parbox{3.5cm}{\\raggedright\\tiny "
+                            for data in datas:
+                                if data[1] != "":
+                                    line[i] = line[i] + " \\textcolor{special}{%s}\\newline" % (data[0])
+                                else:
+                                    line[i] = line[i] + "{%s}\\newline" % (data[0])
+                            line[i] = line[i] + " }"
+
                     if i == 6:
                         last_day_in_week = True
 
