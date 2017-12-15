@@ -9,7 +9,7 @@ debug = False
 
 class LatexCalendar(calendar.Calendar):
 
-    def __init__(self, *args):
+    def __init__(self, tempdir, *args):
         super(calendar.Calendar, self)
 
         # set year
@@ -28,7 +28,7 @@ class LatexCalendar(calendar.Calendar):
             self.setfirstweekday(0)
 
         # helper stuff
-        self.texfile = tempfile.NamedTemporaryFile(delete=not debug)
+        self.texfile = tempfile.NamedTemporaryFile(dir=tempdir, delete=not debug)
         self.heights = [0] * 7;
         self.heights[4] = 3
         self.heights[5] = 2.5
@@ -157,12 +157,12 @@ if __name__ == "__main__":
     locale.setlocale(locale.LC_ALL, '')
     locale.setlocale(locale.LC_TIME, '')
 
-    import sys
+    import sys, os
     if len(sys.argv) < 2:
         usage(sys.argv)
         sys.exit(1)
 
-    pc = LatexCalendar(*sys.argv[1:])
+    pc = LatexCalendar(os.path.dirname(sys.argv[0]), *sys.argv[1:])
     pc.generate_file()
     pc.pdflatex()
 
