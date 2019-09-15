@@ -28,7 +28,7 @@ class LatexCalendar(calendar.Calendar):
             self.setfirstweekday(0)
 
         # helper stuff
-        self.texfile = tempfile.NamedTemporaryFile(dir=tempdir, delete=not debug)
+        self.texfile = tempfile.NamedTemporaryFile(dir=tempdir, mode='w', delete=not debug)
         self.heights = [0] * 7;
         self.heights[4] = 3
         self.heights[5] = 2.5
@@ -38,7 +38,7 @@ class LatexCalendar(calendar.Calendar):
     def parse_file(self, filename):
 
         self.data = dict()
-        for i in xrange(1, 13):
+        for i in range(1, 13):
             self.data[i]=dict()
 
         with open(filename) as datafile:
@@ -67,7 +67,7 @@ class LatexCalendar(calendar.Calendar):
                 self.texfile.write(line.replace("%year%", str(self.year)))
 
         # add months 1 - 12
-        for month in xrange(1,13):
+        for month in range(1,13):
             # get additional data for this month
             if self.has_bdays:
                 monthdata = self.data[month]
@@ -162,10 +162,10 @@ class LatexCalendar(calendar.Calendar):
 
 
 def usage(*args):
-    print "usage: %s <year> [csv-data [first-day-of-week]]" % args[0][0]
-    print ""
-    print "   where first-day-of-week is one of 0=Monday, ..., 6=Sunday"
-    print ""
+    print("usage: {} <year> [csv-data [first-day-of-week]]".format(args[0][0]))
+    print()
+    print("   where first-day-of-week is one of 0=Monday, ..., 6=Sunday")
+    print()
 
 # arguments: year, csv-data, weekstart
 if __name__ == "__main__":
