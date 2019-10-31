@@ -6,6 +6,11 @@ This tool uses python's
 provides modular `ncal` functionality) to generate a TeX based, A4-sized wall
 calendar with one month per page.
 
+Prerequisites
+-------------
+
+* Python 3
+
 Usage
 -----
 
