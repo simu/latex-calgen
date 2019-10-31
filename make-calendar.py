@@ -62,7 +62,7 @@ class LatexCalendar(calendar.Calendar):
 
     def generate_file(self):
         # add header to texfile
-        with open(HEAD) as header:
+        with open(HEAD, "r") as header:
             for line in header:
                 self.texfile.write(line.replace("%year%", str(self.year)))
 
@@ -150,7 +150,7 @@ class LatexCalendar(calendar.Calendar):
         self.texfile.flush()
 
 
-    def pdflatex(self):
+    def pdflatex(self, outprefix="cal"):
         import subprocess
         ret = subprocess.call(["pdflatex", self.texfile.name]);
         if not debug and ret == 0:
@@ -158,7 +158,7 @@ class LatexCalendar(calendar.Calendar):
             fname = os.path.basename(self.texfile.name)
             os.remove(fname + ".aux")
             os.remove(fname + ".log")
-            os.rename(fname + ".pdf", "cal%d.pdf" % self.year)
+            os.rename(fname + ".pdf", "%s_%d.pdf" % (outprefix, self.year))
 
 
 def usage(*args):
@@ -179,7 +179,11 @@ if __name__ == "__main__":
         usage(sys.argv)
         sys.exit(1)
 
+    outprefix = "cal"
+    if len(sys.argv) > 2:
+        outprefix, _ = os.path.splitext(os.path.basename(sys.argv[2]))
+
     pc = LatexCalendar(os.path.dirname(sys.argv[0]), *sys.argv[1:])
     pc.generate_file()
-    pc.pdflatex()
+    pc.pdflatex(outprefix=outprefix)
 
