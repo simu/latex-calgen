@@ -10,6 +10,7 @@ Prerequisites
 -------------
 
 * Python 3
+* A working LaTeX installation, including `pdflatex`.
 
 Usage
 -----
