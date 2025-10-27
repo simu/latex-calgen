@@ -3,9 +3,13 @@
 import calendar
 import tempfile
 
+from collections import deque
+
 HEAD = "head.tex.in"
 
 debug = False
+
+rotate_amount = 0
 
 class LatexCalendar(calendar.Calendar):
 
@@ -23,7 +27,23 @@ class LatexCalendar(calendar.Calendar):
 
         # configure calendar
         if len(args) > 2:
+            global rotate_amount
             self.setfirstweekday(int(args[2]))
+            match int(args[2]):
+                case 6:
+                    rotate_amount = 1
+                case 5:
+                    rotate_amount = 2
+                case 4:
+                    rotate_amount = 3
+                case 3:
+                    rotate_amount = 4
+                case 2:
+                    rotate_amount = 5
+                case 1:
+                    rotate_amount = 6
+                case _:
+                    rotate_amount = 0
         else:
             self.setfirstweekday(0)
 
@@ -48,8 +68,14 @@ class LatexCalendar(calendar.Calendar):
                     first = False
                     continue
 
-                date,name,special=line.strip().split(',')
-                d,m,_ = map(int, date.split('/'))
+                if len(line.strip()) == 0 :
+                    continue
+
+                if line in ['\n', '\r\n']:
+                    continue
+
+                name,date,special=line.strip().split(',')
+                m,d,_ = map(int, date.split('/'))
 
                 if (m in self.data.keys() and d in self.data[m].keys()):
                     self.data[m][d].append((name, special))
@@ -77,7 +103,8 @@ class LatexCalendar(calendar.Calendar):
             # table header
             self.texfile.write("\\begin{calmonth}{%s}{%d}\n\hline\n" % (calendar.month_name[month], self.year))
             # table header: day names
-            days = [d[0:2] for d in calendar.day_abbr]
+            days = deque([d[0:2] for d in calendar.day_abbr])
+            days.rotate(rotate_amount)
             days[self.sun_index] = "\\textcolor{socol}{%s}" % days[self.sun_index]
             self.texfile.write("&".join(days))
             self.texfile.write("\\\\\n\hline\n")
