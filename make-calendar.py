@@ -96,7 +96,6 @@ class LatexCalendar(calendar.Calendar):
             lines = []
             for l in mdays:
                 sunday_done = False
-                last_day_in_week = False
                 # insert special data
                 line = list(l)
                 for day, datas in monthdata.items():
@@ -143,9 +142,6 @@ class LatexCalendar(calendar.Calendar):
                                     line[i] = line[i] + "{%s}\\newline" % (data[0])
                             line[i] = line[i] + " }"
 
-                    if i == 6:
-                        last_day_in_week = True
-
                 if not sunday_done:
                     # color sundays red
                     if line[self.sun_index] != 0:
@@ -155,23 +151,14 @@ class LatexCalendar(calendar.Calendar):
 
                 # output is more complicated when last day in week has additional data
                 lines.append(
-                    (
-                        "&".join([str(y) if y != 0 else "" for y in line]),
-                        last_day_in_week,
-                    )
+                    "&".join([str(y) if y != 0 else "" for y in line]),
                 )
 
             height = self.heights[len(lines)]
 
             # output
-            for line, last_day_in_week in lines:
-                if last_day_in_week:
-                    h = height - 1
-                else:
-                    h = height
-                self.texfile.write("%s\\\\[%.1fcm]\n\hline\n" % (line, h))
-            # self.texfile.write(("\\\\[%.1fcm]\n\hline\n"%height).join(lines))
-            # self.texfile.write("\\\\[%.1fcm]\n\hline\n"%height)
+            for line in lines:
+                self.texfile.write(f"{line}\\\\[{height:.1f}cm]\n\hline\n")
             self.texfile.write("\\end{calmonth}\n")
 
         self.texfile.write("\end{document}\n\n")
