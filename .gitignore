@@ -3,4 +3,4 @@
 *.pdf
 *.tex
 *.csv
-
+/uv.lock

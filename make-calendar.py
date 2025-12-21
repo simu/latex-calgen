@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
-
 import argparse
 import calendar
+import locale
+import os, os.path
+import sys
 import tempfile
 
 from pathlib import Path
@@ -10,7 +11,6 @@ HEAD = "head.tex.in"
 
 
 class LatexCalendar(calendar.Calendar):
-
     def __init__(self, tempdir: Path, args: argparse.Namespace):
         super(calendar.Calendar, self)
 
@@ -182,22 +182,16 @@ class LatexCalendar(calendar.Calendar):
 
         ret = subprocess.call(["pdflatex", self.texfile.name])
         if not self.debug and ret == 0:
-            import os, os.path
-
             fname = os.path.basename(self.texfile.name)
             os.remove(fname + ".aux")
             os.remove(fname + ".log")
             os.rename(fname + ".pdf", "%s_%d.pdf" % (outprefix, self.year))
 
 
-if __name__ == "__main__":
+def main():
     # set locale: used for generating month and day names
-    import locale
-
     locale.setlocale(locale.LC_ALL, "")
     locale.setlocale(locale.LC_TIME, "")
-
-    import os, sys
 
     parser = argparse.ArgumentParser(
         prog="make-calendar",
@@ -244,3 +238,7 @@ if __name__ == "__main__":
     pc = LatexCalendar(os.path.dirname(sys.argv[0]), args)
     pc.generate_file()
     pc.pdflatex(outprefix=outprefix)
+
+
+if __name__ == "__main__":
+    main()

@@ -10,13 +10,16 @@ Prerequisites
 -------------
 
 * Python 3
+* [uv](https://docs.astral.sh/uv/getting-started/installation/)
 * A working LaTeX installation, including `pdflatex`.
 
 Usage
 -----
 
 
-	./make-calendar.py 2012 # will generate a calendar for 2012
+```
+uv run make-calendar.py 2026 # will generate a calendar for 2026
+```
 
 The complete invocation syntax is
 
