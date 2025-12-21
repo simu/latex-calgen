@@ -115,7 +115,7 @@ class LatexCalendar(calendar.Calendar):
                     # process extra data
                     if len(datas) > 0:
                         if len(datas) > 1:
-                            line[i] += "\\vspace*{.5\\baselineskip}"
+                            line[i] += "\\vspace*{.2\\baselineskip}"
                         line[i] += "\\newline \\parbox{3.5cm}{\\raggedright\\tiny"
 
                         for data in datas:
