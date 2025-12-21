@@ -95,61 +95,38 @@ class LatexCalendar(calendar.Calendar):
             mdays = self.monthdayscalendar(self.year, month)
             lines = []
             for l in mdays:
-                sunday_done = False
                 # insert special data
                 line = list(l)
-                for day, datas in monthdata.items():
-                    try:
-                        i = l.index(day)
-                    except ValueError:
+                for i, day in enumerate(l):
+                    if day == 0:
+                        line[i] = ""
                         continue
-                    if i != -1:
-                        # add day number
-                        if i == self.sun_index:
-                            # color sundays red
-                            line[i] = "\\textcolor{socol}{%s}" % l[i]
-                            sunday_done = True
-                        else:
-                            line[i] = str(l[i])
 
-                        # TODO: refactor + move latex magic into macros
-                        # process extra data
-                        if len(datas) == 1:
-                            data = datas[0]
+                    datas = monthdata.get(day, [])
+
+                    # add day number
+                    if i == self.sun_index:
+                        # color sundays red
+                        line[i] = "\\textcolor{socol}{%s}" % day
+                    else:
+                        line[i] = str(day)
+
+                    # TODO: refactor + move latex magic into macros
+                    # process extra data
+                    if len(datas) > 0:
+                        if len(datas) > 1:
+                            line[i] += "\\vspace*{.5\\baselineskip}"
+                        line[i] += "\\newline \\parbox{3.5cm}{\\raggedright\\tiny"
+
+                        for data in datas:
                             if data[1] != "":
-                                line[i] = line[
-                                    i
-                                ] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny\\textcolor{special}{%s}}" % (
-                                    data[0]
+                                line[i] += " \\textcolor{special}{%s}\\newline" % (
+                                    data[0],
                                 )
                             else:
-                                line[i] = line[
-                                    i
-                                ] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny %s}" % (
-                                    data[0]
-                                )
-                        elif len(datas) > 1:
-                            line[i] = (
-                                line[i]
-                                + "\\vspace*{.5\\baselineskip} \\newline \\parbox{3.5cm}{\\raggedright\\tiny "
-                            )
-                            for data in datas:
-                                if data[1] != "":
-                                    line[i] = line[
-                                        i
-                                    ] + " \\textcolor{special}{%s}\\newline" % (data[0])
-                                else:
-                                    line[i] = line[i] + "{%s}\\newline" % (data[0])
-                            line[i] = line[i] + " }"
+                                line[i] += "{%s}\\newline" % (data[0])
+                        line[i] += " }"
 
-                if not sunday_done:
-                    # color sundays red
-                    if line[self.sun_index] != 0:
-                        line[self.sun_index] = (
-                            "\\textcolor{socol}{%s}" % line[self.sun_index]
-                        )
-
-                # output is more complicated when last day in week has additional data
                 lines.append(
                     "&".join([str(y) if y != 0 else "" for y in line]),
                 )
