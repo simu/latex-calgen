@@ -5,7 +5,7 @@ import os, os.path
 import sys
 import tempfile
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import holidays
@@ -34,7 +34,7 @@ class LatexCalendar(calendar.Calendar):
 
         # setup csv data
         if args.csv_data:
-            self.parse_file(args.csv_data)
+            self.parse_file(args)
         else:
             self.data = None
 
@@ -83,7 +83,8 @@ class LatexCalendar(calendar.Calendar):
                 self.holidays._add_easter_sunday(translate("Easter Sunday", lang))
                 self.holidays._add_whit_sunday(translate("Whit Sunday", lang))
 
-    def parse_file(self, filename):
+    def parse_file(self, args: argparse.Namespace):
+        filename = args.csv_data
         self.data = dict()
         for i in range(1, 13):
             self.data[i] = dict()
@@ -96,12 +97,11 @@ class LatexCalendar(calendar.Calendar):
                     continue
 
                 datum, name, special = line.strip().split(",")
-                d, m, _ = map(int, datum.split("/"))
+                datum = datetime.strptime(datum, args.date_format)
 
-                if m in self.data.keys() and d in self.data[m].keys():
-                    self.data[m][d].append((name, special))
-                else:
-                    self.data[m][d] = [(name, special)]
+                self.data.setdefault(datum.month, []).setdefault(datum.day, []).append(
+                    (name, special)
+                )
 
     @property
     def has_bdays(self):
@@ -227,6 +227,11 @@ def main():
         "-p",
         "--prefix",
         help="The prefix for the calendar pdf. The program defaults to prefix `cal` if this option is unset.",
+    )
+    parser.add_argument(
+        "--date-format",
+        default="%d/%m/%Y",
+        help="The date format (for `strptime`) to expect in the first column of the provided CSV file",
     )
     parser.add_argument(
         "-f",

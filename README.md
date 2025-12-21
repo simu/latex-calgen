@@ -24,7 +24,7 @@ uv run make-calendar.py 2026 # will generate a calendar for 2026
 The complete invocation syntax is
 
 ```
-usage: make-calendar [-h] [-d CSV_DATA] [-p PREFIX] [-f FIRST_DAY_OF_WEEK] [-H PUBLIC_HOLIDAYS] [--debug] year
+usage: make-calendar [-h] [-d CSV_DATA] [-p PREFIX] [--date-format DATE_FORMAT] [-f FIRST_DAY_OF_WEEK] [-H PUBLIC_HOLIDAYS] [--debug] year
 
 Generate a year calendar with LaTeX.
 
@@ -37,6 +37,8 @@ options:
                         Additional data to add to the calendar. See README for details (default: None)
   -p PREFIX, --prefix PREFIX
                         The prefix for the calendar pdf. The program defaults to prefix `cal` if this option is unset. (default: None)
+  --date-format DATE_FORMAT
+                        The date format (for `strptime`) to expect in the first column of the provided CSV file (default: %d/%m/%Y)
   -f FIRST_DAY_OF_WEEK, --first-day-of-week FIRST_DAY_OF_WEEK
                         On which day to start the week, 0=Monday, 6=Sunday (default: 0)
   -H PUBLIC_HOLIDAYS, --public-holidays PUBLIC_HOLIDAYS
@@ -44,11 +46,12 @@ options:
   --debug               Don't delete the generated LaTeX source file (default: False)
 ```
 
-The option `--csv-data` is intended to be used for e.g. birthday data and the csv should have three columns containing: 
+The option `--csv-data` is intended to be used for e.g. birthday data and the csv should have three columns containing (in order):
 
-- the date in `M/D/YYYY` format
+- the date (in `DD/MM/YYYY` format by default, the format can be overridden by option `--date-format`)
 - a text to display on that date
-- a type for the entry
+- a type marker for the entry.
+  Currently, the program will set the text color to red for type marker `HOLIDAY` and to blue for any other non-empty type marker.
 
 The first line of the CSV file is ignored
 
