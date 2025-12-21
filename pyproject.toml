@@ -4,3 +4,6 @@ version = "0.1.0"
 description = "Simple tool to generate a year calendar with LaTeX"
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = [
+    "holidays>=0.87",
+]

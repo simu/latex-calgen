@@ -24,7 +24,7 @@ uv run make-calendar.py 2026 # will generate a calendar for 2026
 The complete invocation syntax is
 
 ```
-usage: make-calendar [-h] [-d CSV_DATA] [-p PREFIX] [-f FIRST_DAY_OF_WEEK] [--debug] year
+usage: make-calendar [-h] [-d CSV_DATA] [-p PREFIX] [-f FIRST_DAY_OF_WEEK] [-H PUBLIC_HOLIDAYS] [--debug] year
 
 Generate a year calendar with LaTeX.
 
@@ -39,6 +39,8 @@ options:
                         The prefix for the calendar pdf. The program defaults to prefix `cal` if this option is unset. (default: None)
   -f FIRST_DAY_OF_WEEK, --first-day-of-week FIRST_DAY_OF_WEEK
                         On which day to start the week, 0=Monday, 6=Sunday (default: 0)
+  -H PUBLIC_HOLIDAYS, --public-holidays PUBLIC_HOLIDAYS
+                        Country code (with optional subdivision, separated by ':') to mark public holidays with red day number and public holiday text (default: None)
   --debug               Don't delete the generated LaTeX source file (default: False)
 ```
 
@@ -55,6 +57,8 @@ If the parameter is omitted the week starts on Monday.
 
 The option `--prefix` is used as the prefix for the output file.
 If not provided, defaults to `cal`.
+
+The option `--public-holidays` can be set to a country code (or a country code with subdivision separated by a `:`) to mark public holidays with red day number and public holiday text.
 
 
 Customization

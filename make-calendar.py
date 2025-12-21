@@ -5,9 +5,24 @@ import os, os.path
 import sys
 import tempfile
 
+from datetime import date
 from pathlib import Path
 
+import holidays
+
 HEAD = "head.tex.in"
+
+
+def translate(h: str, lang: str) -> str:
+    de = {
+        "Easter Sunday": "Ostern",
+        "Whit Sunday": "Pfingsten",
+    }
+    match lang:
+        case "de":
+            return de[h]
+        case _:
+            return h
 
 
 class LatexCalendar(calendar.Calendar):
@@ -30,6 +45,8 @@ class LatexCalendar(calendar.Calendar):
             )
         self.setfirstweekday(args.first_day_of_week)
 
+        self.setup_holidays(args)
+
         # helper stuff
         self.debug = args.debug
         self.texfile = tempfile.NamedTemporaryFile(
@@ -41,8 +58,32 @@ class LatexCalendar(calendar.Calendar):
         self.heights[6] = 1.9
         self.sun_index = [x for x in self.iterweekdays()].index(6)
 
-    def parse_file(self, filename):
+    def setup_holidays(self, args: argparse.Namespace):
+        if args.public_holidays:
+            if ":" in args.public_holidays:
+                cn, div = args.public_holidays.split(":")
+            else:
+                cn = args.public_holidays
+                div = None
+            # set holidays language from first part of LC_TIME locale (e.g. "de" for "de_CH.utf-8")
+            lang = locale.getlocale(locale.LC_TIME)[0].split("_")[0]
+            self.holidays = holidays.country_holidays(
+                cn, years=self.year, subdiv=div, language=lang
+            )
+            self.fixup_holidays(cn, lang)
+        else:
+            self.holidays = {}
 
+    def fixup_holidays(self, country: str, lang: str):
+        match country.lower():
+            case "ch":
+                # holidays lib goes strictly with CH official documentation which doesn't contain Easter
+                # Sunday and Whit Sunday as public holidays. However, most Swiss calendars will have a
+                # note for those two Sundays anyway, so we patch the holiday data for CH here.
+                self.holidays._add_easter_sunday(translate("Easter Sunday", lang))
+                self.holidays._add_whit_sunday(translate("Whit Sunday", lang))
+
+    def parse_file(self, filename):
         self.data = dict()
         for i in range(1, 13):
             self.data[i] = dict()
@@ -54,8 +95,8 @@ class LatexCalendar(calendar.Calendar):
                     first = False
                     continue
 
-                date, name, special = line.strip().split(",")
-                d, m, _ = map(int, date.split("/"))
+                datum, name, special = line.strip().split(",")
+                d, m, _ = map(int, datum.split("/"))
 
                 if m in self.data.keys() and d in self.data[m].keys():
                     self.data[m][d].append((name, special))
@@ -102,11 +143,15 @@ class LatexCalendar(calendar.Calendar):
                         line[i] = ""
                         continue
 
+                    today = date(self.year, month, day)
                     datas = monthdata.get(day, [])
 
+                    if today in self.holidays:
+                        datas = [[self.holidays[today], "HOLIDAY"]] + datas
+
                     # add day number
-                    if i == self.sun_index:
-                        # color sundays red
+                    if i == self.sun_index or today in self.holidays:
+                        # color sundays and public holidays red
                         line[i] = "\\textcolor{socol}{%s}" % day
                     else:
                         line[i] = str(day)
@@ -119,8 +164,14 @@ class LatexCalendar(calendar.Calendar):
                         line[i] += "\\newline \\parbox{3.5cm}{\\raggedright\\tiny"
 
                         for data in datas:
+                            if data[1] == "HOLIDAY":
+                                color = "socol"
+                            elif data[1] != "":
+                                color = "special"
+
                             if data[1] != "":
-                                line[i] += " \\textcolor{special}{%s}\\newline" % (
+                                line[i] += " \\textcolor{%s}{%s}\\newline" % (
+                                    color,
                                     data[0],
                                 )
                             else:
@@ -183,6 +234,11 @@ def main():
         type=int,
         default=0,
         help="On which day to start the week, 0=Monday, 6=Sunday",
+    )
+    parser.add_argument(
+        "-H",
+        "--public-holidays",
+        help="Country code (with optional subdivision, separated by ':') to mark public holidays with red day number and public holiday text",
     )
     parser.add_argument(
         "--debug",
