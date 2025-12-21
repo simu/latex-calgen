@@ -1,36 +1,39 @@
 #!/usr/bin/env python3
 
+import argparse
 import calendar
 import tempfile
 
-HEAD = "head.tex.in"
+from pathlib import Path
 
-debug = False
+HEAD = "head.tex.in"
 
 
 class LatexCalendar(calendar.Calendar):
 
-    def __init__(self, tempdir, *args):
+    def __init__(self, tempdir: Path, args: argparse.Namespace):
         super(calendar.Calendar, self)
 
         # set year
-        self.year = int(args[0])
+        self.year = args.year
 
         # setup csv data
-        if len(args) > 1:
-            self.parse_file(args[1])
+        if args.csv_data:
+            self.parse_file(args.csv_data)
         else:
             self.data = None
 
         # configure calendar
-        if len(args) > 2:
-            self.setfirstweekday(int(args[2]))
-        else:
-            self.setfirstweekday(0)
+        if args.first_day_of_week < 0 or args.first_day_of_week > 6:
+            raise ValueError(
+                "Expected first day of week to be 0-6 (0: Monday, 6: Sunday)"
+            )
+        self.setfirstweekday(args.first_day_of_week)
 
         # helper stuff
+        self.debug = args.debug
         self.texfile = tempfile.NamedTemporaryFile(
-            dir=tempdir, mode="w", delete=not debug
+            dir=tempdir, mode="w", delete=not self.debug
         )
         self.heights = [0] * 7
         self.heights[4] = 3
@@ -178,7 +181,7 @@ class LatexCalendar(calendar.Calendar):
         import subprocess
 
         ret = subprocess.call(["pdflatex", self.texfile.name])
-        if not debug and ret == 0:
+        if not self.debug and ret == 0:
             import os, os.path
 
             fname = os.path.basename(self.texfile.name)
@@ -187,14 +190,6 @@ class LatexCalendar(calendar.Calendar):
             os.rename(fname + ".pdf", "%s_%d.pdf" % (outprefix, self.year))
 
 
-def usage(*args):
-    print("usage: {} <year> [csv-data [first-day-of-week]]".format(args[0][0]))
-    print()
-    print("   where first-day-of-week is one of 0=Monday, ..., 6=Sunday")
-    print()
-
-
-# arguments: year, csv-data, weekstart
 if __name__ == "__main__":
     # set locale: used for generating month and day names
     import locale
@@ -202,16 +197,50 @@ if __name__ == "__main__":
     locale.setlocale(locale.LC_ALL, "")
     locale.setlocale(locale.LC_TIME, "")
 
-    import sys, os
+    import os, sys
 
-    if len(sys.argv) < 2:
-        usage(sys.argv)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        prog="make-calendar",
+        description="Generate a year calendar with LaTeX.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "year", type=int, help="The year for which to generate the calendar"
+    )
+    parser.add_argument(
+        "-d",
+        "--csv-data",
+        default=None,
+        type=Path,
+        help="Additional data to add to the calendar. See README for details",
+    )
+    parser.add_argument(
+        "-p",
+        "--prefix",
+        help="The prefix for the calendar pdf. The program defaults to prefix `cal` if this option is unset.",
+    )
+    parser.add_argument(
+        "-f",
+        "--first-day-of-week",
+        type=int,
+        default=0,
+        help="On which day to start the week, 0=Monday, 6=Sunday",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Don't delete the generated LaTeX source file",
+    )
 
-    outprefix = "cal"
-    if len(sys.argv) > 2:
-        outprefix, _ = os.path.splitext(os.path.basename(sys.argv[2]))
+    args = parser.parse_args()
 
-    pc = LatexCalendar(os.path.dirname(sys.argv[0]), *sys.argv[1:])
+    outprefix = args.prefix or "cal"
+    if args.csv_data and not args.prefix:
+        print(
+            "Using data file name as output prefix. Override this behavior by providing an explicit prefix"
+        )
+        outprefix = os.path.splitext(args.csv_data)[0]
+
+    pc = LatexCalendar(os.path.dirname(sys.argv[0]), args)
     pc.generate_file()
     pc.pdflatex(outprefix=outprefix)
