@@ -130,7 +130,10 @@ class LatexCalendar(calendar.Calendar):
                 % (calendar.month_name[month], self.year)
             )
             # table header: day names
-            days = [d[0:2] for d in calendar.day_abbr]
+            # NOTE(sg): The calendar module's `day_abbr` list is independent of our
+            # calendar.Calendar instance, so we need to generate a rotated list of day names with
+            # `iterweekdays()` to ensure that the header and contents for each month match up.
+            days = [calendar.day_abbr[d][0:2] for d in self.iterweekdays()]
             days[self.sun_index] = "\\textcolor{socol}{%s}" % days[self.sun_index]
             self.texfile.write("&".join(days))
             self.texfile.write("\\\\\n\hline\n")
