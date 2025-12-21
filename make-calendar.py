@@ -89,18 +89,21 @@ class LatexCalendar(calendar.Calendar):
         for i in range(1, 13):
             self.data[i] = dict()
 
-        with open(filename) as datafile:
-            first = True
+        with open(filename, newline="") as datafile:
             for line in datafile:
-                if first:
-                    first = False
+                line = line.strip()
+                if not line or line.startswith("#"):
                     continue
 
-                datum, name, special = line.strip().split(",")
-                datum = datetime.strptime(datum, args.date_format)
+                try:
+                    datum, text, typ = line.split(",")
+                    datum = datetime.strptime(datum, args.date_format)
+                except ValueError as e:
+                    print(f"Skipping entry '{line}': {e}")
+                    continue
 
                 self.data.setdefault(datum.month, []).setdefault(datum.day, []).append(
-                    (name, special)
+                    (text, typ)
                 )
 
     @property

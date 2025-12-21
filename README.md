@@ -53,7 +53,7 @@ The option `--csv-data` is intended to be used for e.g. birthday data and the cs
 - a type marker for the entry.
   Currently, the program will set the text color to red for type marker `HOLIDAY` and to blue for any other non-empty type marker.
 
-The first line of the CSV file is ignored
+Empty lines, lines starting with `#`, lines which don't have exactly three columns, and lines for which the date can't be parsed with the provided format are skipped.
 
 The option `--first-day-of-week` is used to select on which weekday (0=Monday through to 6=Sunday) the week starts.
 If the parameter is omitted the week starts on Monday.
