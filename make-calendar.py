@@ -7,6 +7,7 @@ HEAD = "head.tex.in"
 
 debug = False
 
+
 class LatexCalendar(calendar.Calendar):
 
     def __init__(self, tempdir, *args):
@@ -28,18 +29,20 @@ class LatexCalendar(calendar.Calendar):
             self.setfirstweekday(0)
 
         # helper stuff
-        self.texfile = tempfile.NamedTemporaryFile(dir=tempdir, mode='w', delete=not debug)
-        self.heights = [0] * 7;
+        self.texfile = tempfile.NamedTemporaryFile(
+            dir=tempdir, mode="w", delete=not debug
+        )
+        self.heights = [0] * 7
         self.heights[4] = 3
         self.heights[5] = 2.5
         self.heights[6] = 1.9
-        self.sun_index = [ x for x in self.iterweekdays() ].index(6)
+        self.sun_index = [x for x in self.iterweekdays()].index(6)
 
     def parse_file(self, filename):
 
         self.data = dict()
         for i in range(1, 13):
-            self.data[i]=dict()
+            self.data[i] = dict()
 
         with open(filename) as datafile:
             first = True
@@ -48,10 +51,10 @@ class LatexCalendar(calendar.Calendar):
                     first = False
                     continue
 
-                date,name,special=line.strip().split(',')
-                d,m,_ = map(int, date.split('/'))
+                date, name, special = line.strip().split(",")
+                d, m, _ = map(int, date.split("/"))
 
-                if (m in self.data.keys() and d in self.data[m].keys()):
+                if m in self.data.keys() and d in self.data[m].keys():
                     self.data[m][d].append((name, special))
                 else:
                     self.data[m][d] = [(name, special)]
@@ -67,7 +70,7 @@ class LatexCalendar(calendar.Calendar):
                 self.texfile.write(line.replace("%year%", str(self.year)))
 
         # add months 1 - 12
-        for month in range(1,13):
+        for month in range(1, 13):
             # get additional data for this month
             if self.has_bdays:
                 monthdata = self.data[month]
@@ -75,7 +78,10 @@ class LatexCalendar(calendar.Calendar):
                 monthdata = dict()
 
             # table header
-            self.texfile.write("\\begin{calmonth}{%s}{%d}\n\hline\n" % (calendar.month_name[month], self.year))
+            self.texfile.write(
+                "\\begin{calmonth}{%s}{%d}\n\hline\n"
+                % (calendar.month_name[month], self.year)
+            )
             # table header: day names
             days = [d[0:2] for d in calendar.day_abbr]
             days[self.sun_index] = "\\textcolor{socol}{%s}" % days[self.sun_index]
@@ -90,7 +96,7 @@ class LatexCalendar(calendar.Calendar):
                 last_day_in_week = False
                 # insert special data
                 line = list(l)
-                for (day, datas) in monthdata.items():
+                for day, datas in monthdata.items():
                     try:
                         i = l.index(day)
                     except ValueError:
@@ -100,7 +106,7 @@ class LatexCalendar(calendar.Calendar):
                         if i == self.sun_index:
                             # color sundays red
                             line[i] = "\\textcolor{socol}{%s}" % l[i]
-                            sunday_done=True
+                            sunday_done = True
                         else:
                             line[i] = str(l[i])
 
@@ -109,14 +115,27 @@ class LatexCalendar(calendar.Calendar):
                         if len(datas) == 1:
                             data = datas[0]
                             if data[1] != "":
-                                line[i] = line[i] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny\\textcolor{special}{%s}}" % (data[0])
+                                line[i] = line[
+                                    i
+                                ] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny\\textcolor{special}{%s}}" % (
+                                    data[0]
+                                )
                             else:
-                                line[i] = line[i] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny %s}" % (data[0])
+                                line[i] = line[
+                                    i
+                                ] + "\\newline \\parbox{3.5cm}{\\raggedright\\tiny %s}" % (
+                                    data[0]
+                                )
                         elif len(datas) > 1:
-                            line[i] = line[i] + "\\vspace*{.5\\baselineskip} \\newline \\parbox{3.5cm}{\\raggedright\\tiny "
+                            line[i] = (
+                                line[i]
+                                + "\\vspace*{.5\\baselineskip} \\newline \\parbox{3.5cm}{\\raggedright\\tiny "
+                            )
                             for data in datas:
                                 if data[1] != "":
-                                    line[i] = line[i] + " \\textcolor{special}{%s}\\newline" % (data[0])
+                                    line[i] = line[
+                                        i
+                                    ] + " \\textcolor{special}{%s}\\newline" % (data[0])
                                 else:
                                     line[i] = line[i] + "{%s}\\newline" % (data[0])
                             line[i] = line[i] + " }"
@@ -127,34 +146,41 @@ class LatexCalendar(calendar.Calendar):
                 if not sunday_done:
                     # color sundays red
                     if line[self.sun_index] != 0:
-                        line[self.sun_index] = "\\textcolor{socol}{%s}" % line[self.sun_index]
-
+                        line[self.sun_index] = (
+                            "\\textcolor{socol}{%s}" % line[self.sun_index]
+                        )
 
                 # output is more complicated when last day in week has additional data
-                lines.append(("&".join([str(y) if y != 0 else "" for y in line]), last_day_in_week))
+                lines.append(
+                    (
+                        "&".join([str(y) if y != 0 else "" for y in line]),
+                        last_day_in_week,
+                    )
+                )
 
             height = self.heights[len(lines)]
 
             # output
-            for line,last_day_in_week in lines:
+            for line, last_day_in_week in lines:
                 if last_day_in_week:
-                    h = height - 0.8
+                    h = height - 1
                 else:
                     h = height
-                self.texfile.write("%s\\\\[%.1fcm]\n\hline\n"%(line,h))
-            #self.texfile.write(("\\\\[%.1fcm]\n\hline\n"%height).join(lines))
-            #self.texfile.write("\\\\[%.1fcm]\n\hline\n"%height)
+                self.texfile.write("%s\\\\[%.1fcm]\n\hline\n" % (line, h))
+            # self.texfile.write(("\\\\[%.1fcm]\n\hline\n"%height).join(lines))
+            # self.texfile.write("\\\\[%.1fcm]\n\hline\n"%height)
             self.texfile.write("\\end{calmonth}\n")
 
         self.texfile.write("\end{document}\n\n")
         self.texfile.flush()
 
-
     def pdflatex(self, outprefix="cal"):
         import subprocess
-        ret = subprocess.call(["pdflatex", self.texfile.name]);
+
+        ret = subprocess.call(["pdflatex", self.texfile.name])
         if not debug and ret == 0:
             import os, os.path
+
             fname = os.path.basename(self.texfile.name)
             os.remove(fname + ".aux")
             os.remove(fname + ".log")
@@ -167,14 +193,17 @@ def usage(*args):
     print("   where first-day-of-week is one of 0=Monday, ..., 6=Sunday")
     print()
 
+
 # arguments: year, csv-data, weekstart
 if __name__ == "__main__":
     # set locale: used for generating month and day names
     import locale
-    locale.setlocale(locale.LC_ALL, '')
-    locale.setlocale(locale.LC_TIME, '')
+
+    locale.setlocale(locale.LC_ALL, "")
+    locale.setlocale(locale.LC_TIME, "")
 
     import sys, os
+
     if len(sys.argv) < 2:
         usage(sys.argv)
         sys.exit(1)
@@ -186,4 +215,3 @@ if __name__ == "__main__":
     pc = LatexCalendar(os.path.dirname(sys.argv[0]), *sys.argv[1:])
     pc.generate_file()
     pc.pdflatex(outprefix=outprefix)
-
